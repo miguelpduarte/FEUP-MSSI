@@ -3,6 +3,8 @@ globals
   num-drivers ;; the number of drivers that will be working
   driver-speed ;; the driver speed (constant)
 
+  min-trip-distance ; the minimum distance of a trip
+
   num-drivers-starting
   num-drivers-occupied
 
@@ -53,9 +55,10 @@ end
 
 to setup-globals
   set num-drivers 1
+  set driver-speed 1
+  set min-trip-distance 5
   set num-drivers-starting 0
   set num-drivers-occupied 0
-  set driver-speed 1
   set grid-x-inc world-width / grid-size-x
   set grid-y-inc world-height / grid-size-y
 end
@@ -82,7 +85,7 @@ end
 to create-trip
   let non-trips roads with [not is-client? and not is-final?]
   let trip-start one-of non-trips
-  let trip-end one-of non-trips with [self != trip-start]
+  let trip-end one-of non-trips with [self != trip-start and (distance trip-start) > min-trip-distance]
 
   ask trip-start [
     set pcolor green
