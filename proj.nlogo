@@ -133,11 +133,12 @@ end
 to take-requests ;; turtle procedure
   if not occupied? and not starting?
   [
-    let new-client one-of patches with [is-client? and not is-taken?]
-    if is-patch? new-client [
+    let not-taken-clients patches with [is-client? and not is-taken?]
+    let nearest-client min-one-of not-taken-clients [distance myself]
+    if is-patch? nearest-client [
       set starting? true
-      set current-trip new-client
-      ask new-client [set is-taken? true]
+      set current-trip nearest-client
+      ask nearest-client [set is-taken? true]
     ]
   ]
 end
