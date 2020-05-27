@@ -103,6 +103,7 @@ to clear-trip [trip-start]
   ask trip-start [
     set is-client? false
     set is-final? false
+    set is-taken? false
 
     ask my-trip-end [
       set is-final? false
