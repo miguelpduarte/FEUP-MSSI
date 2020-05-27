@@ -41,6 +41,7 @@ patches-own
 
 to setup
   clear-all
+
   setup-globals
   setup-patches
 
@@ -73,7 +74,7 @@ to setup-patches
     set is-final? false
     set is-taken? false
     set pcolor brown
-    set my-trip-end false
+    set my-trip-end nobody
   ]
 
   set roads patches with
@@ -121,6 +122,7 @@ end
 to setup-drivers ;; turtle procedure
   set starting? false
   set occupied? false
+  set current-trip-start nobody
   put-on-empty-road
   pen-down ; Debug probably, remove
 end
@@ -138,18 +140,17 @@ end
 ; If the driver is not occupied nor starting a trip,
 ; assigns a trip and calculates the path to its start
 to take-requests ;; turtle procedure
-  if not occupied? and not starting?
-  [
-    let not-taken-clients patches with [is-client? and not is-taken?]
-    let nearest-client min-one-of not-taken-clients [distance myself]
-    if is-patch? nearest-client [
-      set starting? true
-      set current-trip-start nearest-client
-      ask nearest-client [set is-taken? true]
-      ; Calculate path to the trip start
-      set current-path (a-star patch-here current-trip-start)
-      show "testdbg"
-      show current-path
+  without-interruption [
+    if not occupied? and not starting? [
+      let not-taken-clients patches with [is-client? and not is-taken?]
+      let nearest-client min-one-of not-taken-clients [distance myself]
+      if is-patch? nearest-client [
+        set starting? true
+        set current-trip-start nearest-client
+        ask nearest-client [set is-taken? true]
+        ; Calculate path to the trip start
+        set current-path (a-star patch-here current-trip-start)
+      ]
     ]
   ]
 end
@@ -171,7 +172,7 @@ to handle-trip-state ;; turtle procedure
         ; finish current trip
         set occupied? false
         clear-trip current-trip-start
-        set current-trip-start -1
+        set current-trip-start nobody
         set current-path []
       ]
     ]
