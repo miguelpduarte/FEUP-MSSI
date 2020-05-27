@@ -1,0 +1,96 @@
+globals [
+  obstacle-color
+]
+
+patches-own [
+  parent-patch ; patch's predecessor
+  f ; value of knowledge plus heuristic cost function f()
+  g ; the value of knowledge cost function g()
+  h ; the value of heuristic cost function h()
+]
+
+to setup-a-star
+  set obstacle-color brown
+end
+
+to-report a-star [source-patch destination-patch]
+  let search-done? false
+  let search-path []
+  let current-patch 0
+  ; The list of the next patches to look at (contains the source patch that will be explored first)
+  let to-see (list source-patch)
+  let seen []
+  
+  while [not search-done?] [
+    ifelse length to-see != 0 [
+      ; sort the patches to traverse in increasing order of their f() values
+      set to-see (sort-by [[p1 p2] -> [f] of p1 < [f] of p2] to-see)
+      
+      ; take the first patch in the list to traverse
+      ; as the current patch (currently being explored)
+      ; and remove it from the list to see
+      set current-patch (item 0 to-see)
+      set to-see (remove-item 0 to-see)
+      
+      ; mark the current patch as visited
+      set seen (lput current-patch seen)
+      
+      ; explore the Von Neumann (left, right, top and bottom) neighbours of the current patch
+      ask current-patch [
+        ; if any of the neighbours is the destination stop the search process
+        ifelse any? neighbors4 with
+        [(pxcor = [pxcor] of destination-patch) and (pycor = [pycor] of destination-patch)] [
+          set search-done? true
+        ]
+        [
+          ; the neighbours should not be obstacles or already explored patches (part of the seen list)
+          ask neighbors4
+          with [pcolor != obstacle-color and (not member? self seen) and (self != parent-patch)] [
+            ; the neighbors to be explored should also not be the source or destination patches or already a part of the to-see list
+            if not member? self to-see and self != source-patch and self != destination-patch [
+              ; add the eligible patch to the to-see list
+              set to-see (lput self to-see)
+              
+              ; update the path finding variables of the eligible patch
+              set parent-patch current-patch
+              set g [g] of parent-patch + 1
+              set h distance destination-patch
+              set f (g + h)
+            ]
+          ]
+        ]
+      ]
+    ][
+      ; if a path is not found (search is incomplete) and the to-see list is exhausted
+      ; display a user message and report an empty search path list.
+      user-message "A path from the source to the destination does not exist."
+      report []
+    ]
+  ]
+  
+  ; if a path is found (search completed) add the current patch
+  ; (node adjacent to the destination) to the search path.
+  set search-path (lput current-patch search-path)
+  
+  ; trace the search path from the current patch 
+  ; all the way to the source patch using the parent patch
+  ; variable which was set during the search for every patch that was explored
+  let temp first search-path
+  while [temp != source-patch] [
+    ; ask temp [set pcolor 85]
+    ask temp [set plabel "85"]
+    set search-path (lput [parent-patch] of temp search-path)
+    set temp [parent-patch] of temp
+  ]
+  
+  ; add the destination patch to the front of the search path
+  set search-path (fput destination-patch search-path)
+  
+  ; reverse the search path so that it starts from a patch adjacent to the
+  ; source patch and ends at the destination patch
+  set search-path (reverse search-path)
+
+  ; report the search path
+  report search-path
+end
+

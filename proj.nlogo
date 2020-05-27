@@ -1,3 +1,5 @@
+__includes [ "a_star.nls" ]
+
 globals
 [
   num-drivers ;; the number of drivers that will be working
@@ -14,6 +16,8 @@ globals
 
   ;; patch agentsets
   roads ;; agentset containing the patches that are roads
+
+  test-start
 ]
 
 turtles-own
@@ -21,7 +25,9 @@ turtles-own
   speed
   starting? ;; curently going to start a trip (moving to the start)
   occupied? ;; currently in a trip
-  current-trip ;; patch representing a start of trip that we are working on
+  current-trip-start ;; patch representing a start of trip that we are working on
+
+  current-path ;; calculated path currently being traversed
 ]
 
 patches-own
@@ -36,19 +42,16 @@ patches-own
 to setup
   clear-all
   setup-globals
-
   setup-patches
 
   set-default-shape turtles "car"
-
-  create-turtles num-drivers
-  [
+  create-turtles num-drivers [
     setup-drivers
     set-driver-color
-    record-data
+    record-driver-data
   ]
 
-  ask turtles [set-driver-speed]
+  setup-a-star
 
   reset-ticks
 end
@@ -119,6 +122,7 @@ to setup-drivers ;; turtle procedure
   set starting? false
   set occupied? false
   put-on-empty-road
+  pen-down ; Debug probably, remove
 end
 
 to set-driver-color
@@ -131,6 +135,8 @@ to put-on-empty-road ;; turtle procedure
   move-to one-of roads with [not any? turtles-on self]
 end
 
+; If the driver is not occupied nor starting a trip,
+; assigns a trip and calculates the path to its start
 to take-requests ;; turtle procedure
   if not occupied? and not starting?
   [
@@ -138,71 +144,57 @@ to take-requests ;; turtle procedure
     let nearest-client min-one-of not-taken-clients [distance myself]
     if is-patch? nearest-client [
       set starting? true
-      set current-trip nearest-client
+      set current-trip-start nearest-client
       ask nearest-client [set is-taken? true]
+      ; Calculate path to the trip start
+      set current-path (a-star patch-here current-trip-start)
+      show "testdbg"
+      show current-path
     ]
   ]
-end
-
-; Sets driver speed based on the current thing they need to do
-to set-driver-speed ;; turtle procedure
-  set speed driver-speed
-  ifelse starting?
-  [
-    ; indo para o inicio
-    driver-head-to current-trip
-  ]
-  [ifelse occupied?
-    [
-      ; indo para o fim
-      driver-head-to [my-trip-end] of current-trip
-    ]
-    [
-      ; idling
-      set speed 0
-    ]
-  ]
-end
-
-; Changes a driver's heading to go the a specific target
-to driver-head-to [target-patch] ;; turtle procedure
-  ifelse xcor < [pxcor] of target-patch
-  [set heading 90]
-  [
-    ifelse xcor > [pxcor] of target-patch
-    [set heading 270]
-    [
-      ifelse ycor < [pycor] of target-patch
-      [set heading 0]
-      [set heading 180]
-    ]
-  ]
-end
-
-to record-data ;; turtle procedure
-  ifelse occupied?
-  [set num-drivers-occupied (num-drivers-occupied + 1)]
-  [if starting? [set num-drivers-starting (num-drivers-starting + 1)]]
 end
 
 ; Switches to next trip state, if possible
+; Calculates the path to the next target
 to handle-trip-state ;; turtle procedure
   ifelse starting? [
-    if patch-here = current-trip [
+    if patch-here = current-trip-start [
       ; the current trip will be started!
       set starting? false
       set occupied? true
+      ; Calculate path from trip start to destination
+      set current-path (a-star current-trip-start [my-trip-end] of current-trip-start)
     ]
   ][
     if occupied? [
-      if patch-here = [my-trip-end] of current-trip [
+      if patch-here = [my-trip-end] of current-trip-start [
         ; finish current trip
         set occupied? false
-        clear-trip current-trip
-        set current-trip -1
+        clear-trip current-trip-start
+        set current-trip-start -1
+        set current-path []
       ]
     ]
   ]
+end
+
+; Moves a driver one step in their path
+to driver-move-one-tick ;; turtle procedure
+  if not empty? current-path [
+    let next-step (first current-path)
+    face next-step
+    ; smoothing movement and ensuring the turtle is not slightly off
+    repeat 10 [fd 0.1]
+    move-to next-step
+
+    set current-path (but-first current-path)
+  ]
+end
+
+to record-driver-data ;; turtle procedure
+  ifelse occupied?
+  [set num-drivers-occupied (num-drivers-occupied + 1)]
+  [if starting? [set num-drivers-starting (num-drivers-starting + 1)]]
 end
 
 ;;;;;;;;;;;;;;;;;;;;
@@ -214,10 +206,9 @@ to go
 
   ask turtles [
     take-requests
-    set-driver-speed
-    fd speed
-    record-data
     handle-trip-state
+    driver-move-one-tick
+    record-driver-data
     set-driver-color
   ]
 
