@@ -1,17 +1,23 @@
 __includes [ "a_star.nls" ]
 
-globals
-[
+globals [
   ; num-drivers ;; the number of drivers that will be working - now is an input
-  driver-speed ;; the driver speed (constant)
 
-  min-trip-distance ; the minimum distance of a trip
+  min-ride-distance ; the minimum distance of a ride
 
   ; variables for statistics
   num-drivers-starting
   num-drivers-occupied
-  num-trips
-  num-trips-taken
+  num-rides
+  num-rides-taken
+
+  ; money constants
+  B ; ride base price
+  P ; price charged per distance unit of ride
+  driver-salary
+  ; money statistics
+  income
+  expenses
 
   ;; grid stuff
   grid-x-inc
@@ -23,23 +29,21 @@ globals
   test-start
 ]
 
-turtles-own
-[
-  speed
-  starting? ;; curently going to start a trip (moving to the start)
-  occupied? ;; currently in a trip
-  current-trip-start ;; patch representing a start of trip that we are working on
+turtles-own [
+  starting? ;; curently going to start a ride (moving to the start)
+  occupied? ;; currently in a ride
+  current-ride-start ;; patch representing a start of ride that we are working on
 
   current-path ;; calculated path currently being traversed
+  current-ride-profit ;; the profit of the current ride based on its duration
 ]
 
-patches-own
-[
-  is-taken? ;; is the trip already taken by a car?
-  is-client? ;; is a start of trip
-  is-final? ;; is an end of trip?
+patches-own [
+  is-taken? ;; is the ride already taken by a car?
+  is-client? ;; is a start of ride
+  is-final? ;; is an end of ride?
 
-  my-trip-end ;; the patch that is the trip's end
+  my-ride-end ;; the patch that is the ride's end
 ]
 
 ;;;; Setup procedures
@@ -48,15 +52,15 @@ patches-own
 to setup
   clear-all
 
+  setup-a-star
+
   setup-globals
   setup-grid-map
   setup-patches
   setup-drivers
 
-  setup-a-star
-
   record-driver-data
-  record-trip-data
+  record-ride-data
   reset-ticks
 end
 
@@ -64,27 +68,31 @@ end
 to setup-with-image [user-image]
   clear-all
 
+  setup-a-star
+
   setup-globals
   setup-image-map user-image
   setup-patches
   setup-drivers
 
-  setup-a-star
-
   record-driver-data
-  record-trip-data
+  record-ride-data
   reset-ticks
 end
 
 
 to setup-globals
   ; set num-drivers 1 - now is an input
-  set driver-speed 1
-  set min-trip-distance 5
+  set min-ride-distance 5
   set num-drivers-starting 0
   set num-drivers-occupied 0
-  set num-trips 0
-  set num-trips-taken 0
+  set num-rides 0
+  set num-rides-taken 0
+  set B 3
+  set P 5
+  set driver-salary 0.05
+  set income 0
+  set expenses 0
   set grid-x-inc world-width / grid-size-x
   set grid-y-inc world-height / grid-size-y
 end
@@ -95,7 +103,7 @@ to setup-patches
     set is-client? false
     set is-final? false
     set is-taken? false
-    set my-trip-end nobody
+    set my-ride-end nobody
   ]
 
   ; The roads agentset is the patches that are white
@@ -107,7 +115,7 @@ to setup-drivers
   create-turtles num-drivers [
     set starting? false
     set occupied? false
-    set current-trip-start nobody
+    set current-ride-start nobody
     set current-path []
     put-on-empty-road
     pen-down ; Debug probably, remove
@@ -136,36 +144,38 @@ to setup-image-map [user-image]
   import-pcolors user-image
 end
 
-;;;;; Trip procedures
-to create-trip
-  let non-trips roads with [not is-client? and not is-final?]
-  let trip-start one-of non-trips
-  let trip-end one-of non-trips with [self != trip-start and (distance trip-start) > min-trip-distance]
+;;;;; ride procedures
+to create-ride
+  without-interruption [
+    let non-rides roads with [not is-client? and not is-final?]
+    let ride-start one-of non-rides
+    let ride-end one-of non-rides with [self != ride-start and (distance ride-start) > min-ride-distance]
 
-  ask trip-start [
-    set pcolor green
-    set is-client? true
-    set my-trip-end trip-end
-  ]
+    ask ride-start [
+      set pcolor green
+      set is-client? true
+      set my-ride-end ride-end
+    ]
 
-  ask trip-end [
-    set pcolor red
-    set is-final? true
+    ask ride-end [
+      set pcolor red
+      set is-final? true
+    ]
   ]
 end
 
-to close-trip [trip-start]
-  ask trip-start [
+to close-ride [ride-start]
+  ask ride-start [
     set is-client? false
     set is-final? false
     set is-taken? false
 
-    ask my-trip-end [
+    ask my-ride-end [
       set is-final? false
       set pcolor white
     ]
 
-    set my-trip-end -1
+    set my-ride-end -1
     set pcolor white
   ]
 end
@@ -181,8 +191,40 @@ to put-on-empty-road ;; turtle procedure
   move-to one-of roads with [not any? turtles-on self]
 end
 
-; If the driver is not occupied nor starting a trip,
-; assigns a trip and calculates the path to its start
+to assign-rides-to-drivers
+  let not-busy-drivers turtles with [not starting? and not occupied?]
+  let not-taken-rides patches with [is-client? and not is-taken?]
+
+  ask not-taken-rides [
+    ; ensuring the same driver is not picked twice
+    let not-picked-drivers not-busy-drivers with [not starting?]
+
+    let assigned-driver min-one-of not-picked-drivers [distance myself]
+
+    show "The assigned driver was"
+    show assigned-driver
+
+    start-ride assigned-driver self
+  ]
+end
+
+to start-ride [driver ride-start]
+  if is-turtle? driver and is-patch? ride-start [
+    ; patch
+    ask ride-start [
+      set is-taken? true
+    ]
+    ; turtle
+    ask driver [
+      set starting? true
+      set current-ride-start ride-start
+      set current-path (a-star patch-here current-ride-start)
+    ]
+  ]
+end
+
+; If the driver is not occupied nor starting a ride,
+; assigns a ride and calculates the path to its start
 to take-requests ;; turtle procedure
   without-interruption [
     if not occupied? and not starting? [
@@ -190,38 +232,45 @@ to take-requests ;; turtle procedure
       let nearest-client min-one-of not-taken-clients [distance myself]
       if is-patch? nearest-client [
         set starting? true
-        set current-trip-start nearest-client
+        set current-ride-start nearest-client
         ask nearest-client [set is-taken? true]
-        ; Calculate path to the trip start
-        set current-path (a-star patch-here current-trip-start)
+        ; Calculate path to the ride start
+        set current-path (a-star patch-here current-ride-start)
       ]
     ]
   ]
 end
 
-; Switches to next trip state, if possible
+; Switches to next ride state, if possible
 ; Calculates the path to the next target
-to handle-trip-state ;; turtle procedure
+to handle-ride-state ;; turtle procedure
   ifelse starting? [
-    if patch-here = current-trip-start [
-      ; the current trip will be started!
+    if patch-here = current-ride-start [
+      ; the current ride will be started!
       set starting? false
       set occupied? true
-      ; Calculate path from trip start to destination
-      set current-path (a-star current-trip-start [my-trip-end] of current-trip-start)
+      ; Calculate path from ride start to destination
+      set current-path (a-star current-ride-start [my-ride-end] of current-ride-start)
+      ; Store the path's length (to calculate profit when the ride is done)
+      set current-ride-profit (calculate-profit (length current-path))
       ; mark the patch as blue just to show it was reached
       set pcolor blue
     ]
   ][
     if occupied? [
-      if patch-here = [my-trip-end] of current-trip-start [
+      if patch-here = [my-ride-end] of current-ride-start [
         ; mark the patch as blue just to show it was reached
         set pcolor blue
-        ; finish current trip
+        ; increase company income based on ride profit
+        without-interruption [
+          set income (income + current-ride-profit)
+        ]
+        ; finish current ride
         set occupied? false
-        close-trip current-trip-start
-        set current-trip-start nobody
+        close-ride current-ride-start
+        set current-ride-start nobody
         set current-path []
+        set current-ride-profit 0
       ]
     ]
   ]
@@ -252,29 +301,42 @@ to record-driver-data
   set num-drivers-starting (count turtles with [starting?])
 end
 
-to record-trip-data
-  set num-trips (count patches with [is-client?])
-  set num-trips-taken (count patches with [is-client? and is-taken?])
+to record-ride-data
+  set num-rides (count patches with [is-client?])
+  set num-rides-taken (count patches with [is-client? and is-taken?])
 end
 
 ;;;;;;;;;;;;;;;;;;;;
-;; Runtime stuff
+;; Runtime
 ;;;;;;;;;;;;;;;;;;;;
 to go
   set num-drivers-occupied 0
   set num-drivers-starting 0
 
+  assign-rides-to-drivers
+
   ask turtles [
-    take-requests
-    handle-trip-state
+    ; take-requests
+    handle-ride-state
     driver-move-one-tick
     set-driver-color
   ]
 
+  charge-expenses
+
   record-driver-data
-  record-trip-data
+  record-ride-data
 
   tick
+end
+
+;;;;; "Business logic"
+to-report calculate-profit [path-length]
+  report B + path-length * P
+end
+
+to charge-expenses
+  set expenses (expenses + (driver-salary * (count turtles)))
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -371,10 +433,10 @@ NIL
 BUTTON
 685
 133
-793
+814
 166
-NIL
-create-trip
+Create a Ride
+create-ride
 NIL
 1
 T
@@ -386,11 +448,11 @@ NIL
 1
 
 PLOT
-258
-475
-458
-625
-Drivers Mid-Trip
+225
+473
+425
+623
+Drivers Mid-Ride
 Time
 NDrivers
 0.0
@@ -404,11 +466,11 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot num-drivers-occupied"
 
 PLOT
-42
-476
-242
-626
-Drivers Starting Trip
+20
+473
+220
+623
+Drivers Starting Ride
 Time
 NDrivers
 0.0
@@ -422,11 +484,11 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot num-drivers-starting"
 
 PLOT
-507
+434
 473
-707
+634
 623
-Active Trips
+Active Rides
 Time
 NTrips
 0.0
@@ -437,8 +499,8 @@ true
 false
 "" ""
 PENS
-"total" 1.0 0 -16777216 true "" "plot num-trips"
-"taken" 1.0 0 -13840069 true "" "plot num-trips-taken"
+"total" 1.0 0 -16777216 true "" "plot num-rides"
+"taken" 1.0 0 -13840069 true "" "plot num-rides-taken"
 
 SLIDER
 675
@@ -449,7 +511,7 @@ num-drivers
 num-drivers
 1
 10
-4.0
+3.0
 1
 1
 NIL
@@ -471,6 +533,60 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+650
+463
+850
+613
+Income
+Time
+Profit
+0.0
+100.0
+0.0
+100.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot income"
+
+PLOT
+856
+463
+1056
+613
+Expenses
+Time
+Expenses
+0.0
+100.0
+0.0
+100.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot expenses"
+
+PLOT
+1063
+463
+1263
+613
+Net Profit
+Time
+Profit
+0.0
+100.0
+0.0
+100.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot (income - expenses)"
 
 @#$#@#$#@
 ## WHAT IS IT?
