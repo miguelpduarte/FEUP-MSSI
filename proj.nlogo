@@ -2,7 +2,7 @@ __includes [ "a_star.nls" ]
 
 globals
 [
-  num-drivers ;; the number of drivers that will be working
+  ; num-drivers ;; the number of drivers that will be working - now is an input
   driver-speed ;; the driver speed (constant)
 
   min-trip-distance ; the minimum distance of a trip
@@ -52,16 +52,17 @@ to setup
   create-turtles num-drivers [
     setup-drivers
     set-driver-color
-    record-driver-data
   ]
 
   setup-a-star
 
+  record-driver-data
+  record-trip-data
   reset-ticks
 end
 
 to setup-globals
-  set num-drivers 1
+  ; set num-drivers 1 - now is an input
   set driver-speed 1
   set min-trip-distance 5
   set num-drivers-starting 0
@@ -128,6 +129,7 @@ to setup-drivers ;; turtle procedure
   set starting? false
   set occupied? false
   set current-trip-start nobody
+  set current-path []
   put-on-empty-road
   pen-down ; Debug probably, remove
 end
@@ -266,10 +268,10 @@ ticks
 30.0
 
 SLIDER
-917
-28
-1089
-61
+680
+15
+852
+48
 grid-size-x
 grid-size-x
 1
@@ -281,10 +283,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-916
-81
-1088
-114
+679
+68
+851
+101
 grid-size-y
 grid-size-y
 1
@@ -330,10 +332,10 @@ NIL
 1
 
 BUTTON
-709
-194
-817
-227
+685
+133
+793
+166
 NIL
 create-trip
 NIL
@@ -400,6 +402,21 @@ false
 PENS
 "total" 1.0 0 -16777216 true "" "plot num-trips"
 "taken" 1.0 0 -13840069 true "" "plot num-trips-taken"
+
+SLIDER
+675
+209
+869
+242
+num-drivers
+num-drivers
+1
+10
+4.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
