@@ -7,14 +7,17 @@ globals
 
   min-trip-distance ; the minimum distance of a trip
 
+  ; variables for statistics
   num-drivers-starting
   num-drivers-occupied
+  num-trips
+  num-trips-taken
 
   ;; grid stuff
   grid-x-inc
   grid-y-inc
 
-  ;; patch agentsets
+  ;; agentsets
   roads ;; agentset containing the patches that are roads
 
   test-start
@@ -63,6 +66,8 @@ to setup-globals
   set min-trip-distance 5
   set num-drivers-starting 0
   set num-drivers-occupied 0
+  set num-trips 0
+  set num-trips-taken 0
   set grid-x-inc world-width / grid-size-x
   set grid-y-inc world-height / grid-size-y
 end
@@ -103,7 +108,7 @@ to create-trip
   ]
 end
 
-to clear-trip [trip-start]
+to close-trip [trip-start]
   ask trip-start [
     set is-client? false
     set is-final? false
@@ -171,7 +176,7 @@ to handle-trip-state ;; turtle procedure
       if patch-here = [my-trip-end] of current-trip-start [
         ; finish current trip
         set occupied? false
-        clear-trip current-trip-start
+        close-trip current-trip-start
         set current-trip-start nobody
         set current-path []
       ]
@@ -192,10 +197,14 @@ to driver-move-one-tick ;; turtle procedure
   ]
 end
 
-to record-driver-data ;; turtle procedure
-  ifelse occupied?
-  [set num-drivers-occupied (num-drivers-occupied + 1)]
-  [if starting? [set num-drivers-starting (num-drivers-starting + 1)]]
+to record-driver-data
+  set num-drivers-occupied (count turtles with [occupied?])
+  set num-drivers-starting (count turtles with [starting?])
+end
+
+to record-trip-data
+  set num-trips (count patches with [is-client?])
+  set num-trips-taken (count patches with [is-client? and is-taken?])
 end
 
 ;;;;;;;;;;;;;;;;;;;;
@@ -209,9 +218,11 @@ to go
     take-requests
     handle-trip-state
     driver-move-one-tick
-    record-driver-data
     set-driver-color
   ]
+
+  record-driver-data
+  record-trip-data
 
   tick
 end
@@ -244,10 +255,10 @@ ticks
 30.0
 
 SLIDER
-88
-612
-260
-645
+917
+28
+1089
+61
 grid-size-x
 grid-size-x
 1
@@ -259,10 +270,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-85
-672
-257
-705
+916
+81
+1088
+114
 grid-size-y
 grid-size-y
 1
@@ -274,10 +285,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-40
-33
-113
-66
+15
+15
+88
+48
 NIL
 setup
 NIL
@@ -291,10 +302,10 @@ NIL
 1
 
 BUTTON
-57
-111
-120
-144
+19
+65
+82
+98
 NIL
 go
 T
@@ -308,10 +319,10 @@ NIL
 1
 
 BUTTON
-51
-296
-159
-329
+709
+194
+817
+227
 NIL
 create-trip
 NIL
@@ -323,6 +334,61 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+258
+475
+458
+625
+Drivers Mid-Trip
+Time
+NDrivers
+0.0
+100.0
+0.0
+100.0
+true
+false
+"set-plot-y-range 0 num-drivers" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot num-drivers-occupied"
+
+PLOT
+42
+476
+242
+626
+Drivers Starting Trip
+Time
+NDrivers
+0.0
+100.0
+0.0
+100.0
+true
+false
+"set-plot-y-range 0 num-drivers" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot num-drivers-starting"
+
+PLOT
+507
+473
+707
+623
+Active Trips
+Time
+NTrips
+0.0
+100.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"total" 1.0 0 -16777216 true "" "plot num-trips"
+"taken" 1.0 0 -13840069 true "" "plot num-trips-taken"
 
 @#$#@#$#@
 ## WHAT IS IT?
