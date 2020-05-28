@@ -78,7 +78,6 @@ to-report a-star [source-patch destination-patch]
   let temp first search-path
   while [temp != source-patch] [
     ; ask temp [set pcolor 85]
-    ask temp [set plabel "85"]
     set search-path (lput [parent-patch] of temp search-path)
     set temp [parent-patch] of temp
   ]
