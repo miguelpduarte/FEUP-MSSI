@@ -170,10 +170,14 @@ to handle-trip-state ;; turtle procedure
       set occupied? true
       ; Calculate path from trip start to destination
       set current-path (a-star current-trip-start [my-trip-end] of current-trip-start)
+      ; mark the patch as blue just to show it was reached
+      set pcolor blue
     ]
   ][
     if occupied? [
       if patch-here = [my-trip-end] of current-trip-start [
+        ; mark the patch as blue just to show it was reached
+        set pcolor blue
         ; finish current trip
         set occupied? false
         close-trip current-trip-start
@@ -188,12 +192,19 @@ end
 to driver-move-one-tick ;; turtle procedure
   if not empty? current-path [
     let next-step (first current-path)
-    face next-step
-    ; smoothing movement and ensuring the turtle is not slightly off
-    repeat 10 [fd 0.1]
-    move-to next-step
+    ifelse next-step = patch-here [
+      ; I'm already at the next step (usually happens with the first step)
+      ; Just skip this patch and call the function again
+      set current-path (but-first current-path)
+      driver-move-one-tick
+    ][
+      face next-step
+      ; smoothing movement and ensuring the turtle is not slightly off
+      repeat 10 [fd 0.1]
+      move-to next-step
 
-    set current-path (but-first current-path)
+      set current-path (but-first current-path)
+    ]
   ]
 end
 
