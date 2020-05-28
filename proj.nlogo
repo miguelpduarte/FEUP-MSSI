@@ -42,17 +42,16 @@ patches-own
   my-trip-end ;; the patch that is the trip's end
 ]
 
+;;;; Setup procedures
+
+; Setup with a default grid
 to setup
   clear-all
 
   setup-globals
+  setup-grid-map
   setup-patches
-
-  set-default-shape turtles "car"
-  create-turtles num-drivers [
-    setup-drivers
-    set-driver-color
-  ]
+  setup-drivers
 
   setup-a-star
 
@@ -60,6 +59,23 @@ to setup
   record-trip-data
   reset-ticks
 end
+
+; Setup with an imported image
+to setup-with-image [user-image]
+  clear-all
+
+  setup-globals
+  setup-image-map user-image
+  setup-patches
+  setup-drivers
+
+  setup-a-star
+
+  record-driver-data
+  record-trip-data
+  reset-ticks
+end
+
 
 to setup-globals
   ; set num-drivers 1 - now is an input
@@ -74,24 +90,53 @@ to setup-globals
 end
 
 to setup-patches
-  ask patches
-  [
+  ; Resetting to initial patch state
+  ask patches [
     set is-client? false
     set is-final? false
     set is-taken? false
-    set pcolor brown
     set my-trip-end nobody
   ]
 
-  set roads patches with
-    [(floor((pxcor + max-pxcor - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
-    (floor((pycor + max-pycor) mod grid-y-inc) = 0)]
-
-  ask roads [ set pcolor white ]
-
-  create-trip
+  ; The roads agentset is the patches that are white
+  set roads patches with [pcolor = white]
 end
 
+to setup-drivers
+  set-default-shape turtles "car"
+  create-turtles num-drivers [
+    set starting? false
+    set occupied? false
+    set current-trip-start nobody
+    set current-path []
+    put-on-empty-road
+    pen-down ; Debug probably, remove
+    set-driver-color
+  ]
+end
+
+;;;;; Map creation procedures
+;;; In these procedures, the roads must be white,
+;;; and the obstacles must be "obstacle-color" (currently brown but might change)
+;;; These methods should be invoked in setup, right before "setup-patches"
+
+to setup-grid-map
+  ; Everything is an obstacle but the roads, which are painted white below
+  ask patches [
+    set pcolor obstacle-color
+  ]
+
+  ask patches with [(floor((pxcor + max-pxcor - floor(grid-x-inc - 1)) mod grid-x-inc) = 0) or
+      (floor((pycor + max-pycor) mod grid-y-inc) = 0)] [
+      set pcolor white
+  ]
+end
+
+to setup-image-map [user-image]
+  import-pcolors user-image
+end
+
+;;;;; Trip procedures
 to create-trip
   let non-trips roads with [not is-client? and not is-final?]
   let trip-start one-of non-trips
@@ -125,15 +170,7 @@ to close-trip [trip-start]
   ]
 end
 
-to setup-drivers ;; turtle procedure
-  set starting? false
-  set occupied? false
-  set current-trip-start nobody
-  set current-path []
-  put-on-empty-road
-  pen-down ; Debug probably, remove
-end
-
+;;;;; Driver procedures
 to set-driver-color
   ifelse starting?
   [ set color yellow ]
@@ -298,11 +335,11 @@ NIL
 HORIZONTAL
 
 BUTTON
-15
-15
-88
-48
-NIL
+17
+67
+158
+100
+Setup with Grid
 setup
 NIL
 1
@@ -315,11 +352,11 @@ NIL
 1
 
 BUTTON
-19
-65
-82
-98
-NIL
+18
+122
+81
+155
+Go
 go
 T
 1
@@ -417,6 +454,23 @@ num-drivers
 1
 NIL
 HORIZONTAL
+
+BUTTON
+11
+17
+167
+50
+Setup with Image
+setup-with-image user-file
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
