@@ -5,6 +5,8 @@ globals [
 
   min-ride-distance ; the minimum distance of a ride
 
+  next-arrival-time ; the tick at which the next trip will be created
+
   ; variables for statistics
   num-drivers-starting
   num-drivers-occupied
@@ -62,6 +64,9 @@ to setup
   record-driver-data
   record-ride-data
   reset-ticks
+
+  ; Scheduling the first arrival - has to be after "reset-ticks"
+  schedule-arrival
 end
 
 ; Setup with an imported image
@@ -78,12 +83,15 @@ to setup-with-image [user-image]
   record-driver-data
   record-ride-data
   reset-ticks
+
+  ; Scheduling the first arrival - has to be after "reset-ticks"
+  schedule-arrival
 end
 
 
 to setup-globals
-  ; set num-drivers 1 - now is an input
   set min-ride-distance 5
+
   set num-drivers-starting 0
   set num-drivers-occupied 0
   set num-rides 0
@@ -93,6 +101,7 @@ to setup-globals
   set driver-salary 0.05
   set income 0
   set expenses 0
+
   set grid-x-inc world-width / grid-size-x
   set grid-y-inc world-height / grid-size-y
 end
@@ -123,6 +132,16 @@ to setup-drivers
   ]
 end
 
+
+;;;;; queue and scheduling procedures
+to schedule-arrival
+  set next-arrival-time (ticks + ceiling random-exponential (20 / mean-arrival-rate))
+  ; show "Current tick "
+  ; show ticks
+  ; show "Scheduled for "
+  ; show next-arrival-time
+end
+
 ;;;;; Map creation procedures
 ;;; In these procedures, the roads must be white,
 ;;; and the obstacles must be "obstacle-color" (currently brown but might change)
@@ -151,16 +170,22 @@ to create-ride
     let ride-start one-of non-rides
     let ride-end one-of non-rides with [self != ride-start and (distance ride-start) > min-ride-distance]
 
-    ask ride-start [
-      set pcolor green
-      set is-client? true
-      set my-ride-end ride-end
+    if (is-patch? ride-start and is-patch? ride-end) [
+      ask ride-start [
+        set pcolor green
+        set is-client? true
+        set my-ride-end ride-end
+      ]
+
+      ask ride-end [
+        set pcolor red
+        set is-final? true
+      ]
     ]
 
-    ask ride-end [
-      set pcolor red
-      set is-final? true
-    ]
+    ; Next ride arrival has to be scheduled regardless of success because if the world fills up
+    ; then no further rides will be created once it clears up
+    schedule-arrival
   ]
 end
 
@@ -201,8 +226,8 @@ to assign-rides-to-drivers
 
     let assigned-driver min-one-of not-picked-drivers [distance myself]
 
-    show "The assigned driver was"
-    show assigned-driver
+    ; show "The assigned driver was"
+    ; show assigned-driver
 
     start-ride assigned-driver self
   ]
@@ -312,6 +337,10 @@ end
 to go
   set num-drivers-occupied 0
   set num-drivers-starting 0
+
+  if (next-arrival-time = ticks) [
+    create-ride
+  ]
 
   assign-rides-to-drivers
 
@@ -510,8 +539,8 @@ SLIDER
 num-drivers
 num-drivers
 1
-10
-3.0
+20
+7.0
 1
 1
 NIL
@@ -587,6 +616,32 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot (income - expenses)"
+
+SLIDER
+673
+290
+961
+323
+mean-arrival-rate
+mean-arrival-rate
+1
+20
+2.0
+1
+1
+every 20 ticks
+HORIZONTAL
+
+MONITOR
+675
+336
+800
+381
+Next Arrival Time
+next-arrival-time
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
