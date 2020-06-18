@@ -5,13 +5,14 @@ globals [
 
   min-ride-distance ; the minimum distance of a ride
 
-  next-arrival-time ; the tick at which the next trip will be created
+  next-arrival-time ; the tick at which the next ride will be created
 
   ; variables for statistics
   num-drivers-starting
   num-drivers-occupied
   num-rides
   num-rides-taken
+  num-clients-gave-up
 
   ; money constants
   B ; ride base price
@@ -43,6 +44,8 @@ turtles-own [
 patches-own [
   is-taken? ;; is the ride already taken by a car?
   is-client? ;; is a start of ride
+  ride-created-tick ;; the tick at which the ride was created
+  ride-expire-tick ;; the tick at which the ride will expire
   is-final? ;; is an end of ride?
 
   my-ride-end ;; the patch that is the ride's end
@@ -88,7 +91,6 @@ to setup-with-image [user-image]
   schedule-arrival
 end
 
-
 to setup-globals
   set min-ride-distance 5
 
@@ -96,6 +98,8 @@ to setup-globals
   set num-drivers-occupied 0
   set num-rides 0
   set num-rides-taken 0
+  set num-clients-gave-up 0
+
   set B 3
   set P 5
   set driver-salary 0.05
@@ -113,6 +117,8 @@ to setup-patches
     set is-final? false
     set is-taken? false
     set my-ride-end nobody
+    set ride-created-tick -1
+    set ride-expire-tick -1
   ]
 
   ; The roads agentset is the patches that are white
@@ -164,6 +170,7 @@ to setup-image-map [user-image]
 end
 
 ;;;;; ride procedures
+; Creates a ride in random coordinates with a minimum distance
 to create-ride
   without-interruption [
     let non-rides roads with [not is-client? and not is-final?]
@@ -175,6 +182,9 @@ to create-ride
         set pcolor green
         set is-client? true
         set my-ride-end ride-end
+
+        set ride-created-tick ticks
+        set ride-expire-tick (ticks + ride-ticks-to-expire)
       ]
 
       ask ride-end [
@@ -189,19 +199,40 @@ to create-ride
   ]
 end
 
+; Called by the driver turtle to finish a ride
 to close-ride [ride-start]
   ask ride-start [
     set is-client? false
     set is-final? false
     set is-taken? false
 
+    set ride-created-tick -1
+    set ride-expire-tick -1
+
     ask my-ride-end [
       set is-final? false
       set pcolor white
     ]
 
-    set my-ride-end -1
+    set my-ride-end nobody
     set pcolor white
+  ]
+end
+
+; When a ride expires, cancel it and finish the ride on the driver side as well
+to cancel-ride ; patch method, called with this=ride-start patch implicitly
+  let my-riders turtles with [current-ride-start = myself]
+  show "muh heroes"
+  show my-riders
+
+  ask turtles with [current-ride-start = myself] [
+    driver-finish-ride
+  ]
+
+  close-ride self
+
+  without-interruption [
+    set num-clients-gave-up (num-clients-gave-up + 1)
   ]
 end
 
@@ -217,19 +248,21 @@ to put-on-empty-road ;; turtle procedure
 end
 
 to assign-rides-to-drivers
-  let not-busy-drivers turtles with [not starting? and not occupied?]
-  let not-taken-rides patches with [is-client? and not is-taken?]
+  without-interruption [
+    let not-busy-drivers turtles with [not starting? and not occupied?]
+    let not-taken-rides patches with [is-client? and not is-taken?]
 
-  ask not-taken-rides [
-    ; ensuring the same driver is not picked twice
-    let not-picked-drivers not-busy-drivers with [not starting?]
+    ask not-taken-rides [
+      ; ensuring the same driver is not picked twice
+      let not-picked-drivers not-busy-drivers with [not starting?]
 
-    let assigned-driver min-one-of not-picked-drivers [distance myself]
+      let assigned-driver min-one-of not-picked-drivers [distance myself]
 
-    ; show "The assigned driver was"
-    ; show assigned-driver
+      ; show "The assigned driver was"
+      ; show assigned-driver
 
-    start-ride assigned-driver self
+      start-ride assigned-driver self
+    ]
   ]
 end
 
@@ -248,22 +281,13 @@ to start-ride [driver ride-start]
   ]
 end
 
-; If the driver is not occupied nor starting a ride,
-; assigns a ride and calculates the path to its start
-to take-requests ;; turtle procedure
-  without-interruption [
-    if not occupied? and not starting? [
-      let not-taken-clients patches with [is-client? and not is-taken?]
-      let nearest-client min-one-of not-taken-clients [distance myself]
-      if is-patch? nearest-client [
-        set starting? true
-        set current-ride-start nearest-client
-        ask nearest-client [set is-taken? true]
-        ; Calculate path to the ride start
-        set current-path (a-star patch-here current-ride-start)
-      ]
-    ]
-  ]
+; For both finishing and cancelling rides, thus the seeming duplication
+to driver-finish-ride ;; turtle procedure
+  set starting? false
+  set occupied? false
+  set current-ride-start nobody
+  set current-path []
+  set current-ride-profit 0
 end
 
 ; Switches to next ride state, if possible
@@ -291,11 +315,8 @@ to handle-ride-state ;; turtle procedure
           set income (income + current-ride-profit)
         ]
         ; finish current ride
-        set occupied? false
         close-ride current-ride-start
-        set current-ride-start nobody
-        set current-path []
-        set current-ride-profit 0
+        driver-finish-ride
       ]
     ]
   ]
@@ -335,11 +356,12 @@ end
 ;; Runtime
 ;;;;;;;;;;;;;;;;;;;;
 to go
-  set num-drivers-occupied 0
-  set num-drivers-starting 0
-
   if (next-arrival-time = ticks) [
     create-ride
+  ]
+
+  ask patches with [is-client? and ride-expire-tick != -1 and ticks >= ride-expire-tick] [
+    cancel-ride
   ]
 
   assign-rides-to-drivers
@@ -369,9 +391,9 @@ to charge-expenses
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+393
 10
-647
+830
 448
 -1
 -1
@@ -396,10 +418,10 @@ ticks
 30.0
 
 SLIDER
-680
-15
-852
-48
+18
+71
+190
+104
 grid-size-x
 grid-size-x
 1
@@ -411,10 +433,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-679
-68
-851
-101
+18
+107
+190
+140
 grid-size-y
 grid-size-y
 1
@@ -426,10 +448,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-17
-67
-158
-100
+30
+371
+171
+404
 Setup with Grid
 setup
 NIL
@@ -443,30 +465,13 @@ NIL
 1
 
 BUTTON
-18
-122
-81
-155
+217
+352
+280
+385
 Go
 go
 T
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-685
-133
-814
-166
-Create a Ride
-create-ride
-NIL
 1
 T
 OBSERVER
@@ -532,10 +537,10 @@ PENS
 "taken" 1.0 0 -13840069 true "" "plot num-rides-taken"
 
 SLIDER
-675
-209
-869
-242
+18
+19
+212
+52
 num-drivers
 num-drivers
 1
@@ -547,10 +552,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-11
-17
-167
-50
+29
+321
+185
+354
 Setup with Image
 setup-with-image user-file
 NIL
@@ -564,10 +569,10 @@ NIL
 1
 
 PLOT
-650
-463
-850
-613
+651
+473
+851
+623
 Income
 Time
 Profit
@@ -582,10 +587,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot income"
 
 PLOT
-856
-463
-1056
-613
+857
+473
+1057
+623
 Expenses
 Time
 Expenses
@@ -600,10 +605,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot expenses"
 
 PLOT
-1063
-463
-1263
-613
+1064
+473
+1264
+623
 Net Profit
 Time
 Profit
@@ -618,30 +623,59 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot (income - expenses)"
 
 SLIDER
-673
+856
 290
-961
+1144
 323
 mean-arrival-rate
 mean-arrival-rate
 1
 20
-2.0
+3.0
 1
 1
 every 20 ticks
 HORIZONTAL
 
 MONITOR
-675
+858
 336
-800
+983
 381
 Next Arrival Time
 next-arrival-time
 17
 1
 11
+
+INPUTBOX
+16
+157
+188
+217
+ride-ticks-to-expire
+250.0
+1
+0
+Number
+
+PLOT
+1275
+473
+1475
+623
+Clients that Gave Up
+Time
+NClientsGaveUp
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot num-clients-gave-up"
 
 @#$#@#$#@
 ## WHAT IS IT?
