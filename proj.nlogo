@@ -133,7 +133,6 @@ to setup-drivers
     set current-ride-start nobody
     set current-path []
     put-on-empty-road
-    pen-down ; Debug probably, remove
     set-driver-color
   ]
 end
@@ -222,8 +221,6 @@ end
 ; When a ride expires, cancel it and finish the ride on the driver side as well
 to cancel-ride ; patch method, called with this=ride-start patch implicitly
   let my-riders turtles with [current-ride-start = myself]
-  show "muh heroes"
-  show my-riders
 
   ask turtles with [current-ride-start = myself] [
     driver-finish-ride
@@ -393,8 +390,8 @@ end
 GRAPHICS-WINDOW
 393
 10
-830
-448
+921
+539
 -1
 -1
 13.0
@@ -407,10 +404,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--16
-16
--16
-16
+0
+39
+-39
+0
 0
 0
 1
@@ -482,10 +479,10 @@ NIL
 1
 
 PLOT
-225
-473
-425
-623
+224
+566
+424
+716
 Drivers Mid-Ride
 Time
 NDrivers
@@ -500,10 +497,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot num-drivers-occupied"
 
 PLOT
-20
-473
-220
-623
+19
+566
+219
+716
 Drivers Starting Ride
 Time
 NDrivers
@@ -518,10 +515,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot num-drivers-starting"
 
 PLOT
-434
-473
-634
-623
+433
+566
+633
+716
 Active Rides
 Time
 NTrips
@@ -569,10 +566,10 @@ NIL
 1
 
 PLOT
-651
-473
-851
-623
+650
+566
+850
+716
 Income
 Time
 Profit
@@ -587,10 +584,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot income"
 
 PLOT
-857
-473
-1057
-623
+856
+566
+1056
+716
 Expenses
 Time
 Expenses
@@ -605,10 +602,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot expenses"
 
 PLOT
-1064
-473
-1264
-623
+1063
+566
+1263
+716
 Net Profit
 Time
 Profit
@@ -623,10 +620,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot (income - expenses)"
 
 SLIDER
-856
-290
-1144
-323
+956
+40
+1244
+73
 mean-arrival-rate
 mean-arrival-rate
 1
@@ -638,10 +635,10 @@ every 20 ticks
 HORIZONTAL
 
 MONITOR
-858
-336
-983
-381
+958
+86
+1083
+131
 Next Arrival Time
 next-arrival-time
 17
@@ -660,10 +657,10 @@ ride-ticks-to-expire
 Number
 
 PLOT
-1275
-473
-1475
-623
+1274
+566
+1474
+716
 Clients that Gave Up
 Time
 NClientsGaveUp

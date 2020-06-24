@@ -10,7 +10,7 @@ patches-own [
 ]
 
 to setup-a-star
-  set obstacle-color brown
+  set obstacle-color black
 end
 
 to-report a-star [source-patch destination-patch]
