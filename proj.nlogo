@@ -23,10 +23,6 @@ globals [
   income
   expenses
 
-  ;; grid stuff
-  grid-x-inc
-  grid-y-inc
-
   ;; agentsets
   roads ;; agentset containing the patches that are roads
 
@@ -111,9 +107,6 @@ to setup-globals
 
   set income 0
   set expenses 0
-
-  set grid-x-inc world-width / grid-size-x
-  set grid-y-inc world-height / grid-size-y
 end
 
 to setup-patches
@@ -161,6 +154,11 @@ end
 ;;; These methods should be invoked in setup, right before "setup-patches"
 
 to setup-grid-map
+  let grid-size-x 5
+  let grid-size-y 5
+  let grid-x-inc world-width / grid-size-x
+  let grid-y-inc world-height / grid-size-y
+
   ; Everything is an obstacle but the roads, which are painted white below
   ask patches [
     set pcolor obstacle-color
@@ -483,41 +481,11 @@ GRAPHICS-WINDOW
 ticks
 30.0
 
-SLIDER
-18
-71
-190
-104
-grid-size-x
-grid-size-x
-1
-9
-5.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-18
-107
-190
-140
-grid-size-y
-grid-size-y
-1
-9
-5.0
-1
-1
-NIL
-HORIZONTAL
-
 BUTTON
-26
-469
-167
-502
+21
+394
+162
+427
 Setup with Grid
 setup
 NIL
@@ -531,10 +499,10 @@ NIL
 1
 
 BUTTON
-213
-450
-276
-483
+195
+374
+258
+407
 Go
 go
 T
@@ -618,10 +586,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-25
-419
-181
-452
+21
+351
+177
+384
 Setup with Image
 setup-with-image user-file
 NIL
@@ -720,7 +688,7 @@ INPUTBOX
 1133
 359
 ride-ticks-to-expire
-100.0
+50.0
 1
 0
 Number
@@ -793,10 +761,10 @@ spawn-in-epicentre-chance
 HORIZONTAL
 
 INPUTBOX
-19
-151
-180
-211
+18
+67
+179
+127
 ride-base-price
 3.0
 1
@@ -804,10 +772,10 @@ ride-base-price
 Number
 
 INPUTBOX
-19
-219
-180
-279
+18
+135
+179
+195
 price-per-ride-distance-unit
 5.0
 1
@@ -815,10 +783,10 @@ price-per-ride-distance-unit
 Number
 
 INPUTBOX
-19
-288
-180
-348
+18
+204
+179
+264
 salary-per-driver-per-tick
 0.05
 1
