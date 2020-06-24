@@ -13,7 +13,8 @@ globals [
   num-drivers-occupied
   num-rides
   num-rides-taken
-  num-clients-gave-up
+  total-num-rides
+  total-num-clients-gave-up
 
   ; money constants (now being set by their inputs' values in "setup-globals")
   B ; ride base price
@@ -96,7 +97,8 @@ to setup-globals
   set num-drivers-occupied 0
   set num-rides 0
   set num-rides-taken 0
-  set num-clients-gave-up 0
+  set total-num-rides 0
+  set total-num-clients-gave-up 0
 
   ; set B 3
   set B ride-base-price
@@ -205,6 +207,8 @@ to create-ride
         ; set pcolor red ; commented since this was initially for debug and now causes a lot of confusion
         set is-final? true
       ]
+
+      set total-num-rides (total-num-rides + 1)
     ]
 
     ; Next ride arrival has to be scheduled regardless of success because if the world fills up
@@ -245,7 +249,7 @@ to cancel-ride ; patch method, called with this=ride-start patch implicitly
   close-ride self
 
   without-interruption [
-    set num-clients-gave-up (num-clients-gave-up + 1)
+    set total-num-clients-gave-up (total-num-clients-gave-up + 1)
   ]
 end
 
@@ -730,9 +734,9 @@ MONITOR
 294
 1137
 339
-Clients that Gave Up
-num-clients-gave-up
-0
+Clients that Gave Up (%)
+(total-num-clients-gave-up / total-num-rides) * 100
+2
 1
 11
 
