@@ -1,3 +1,4 @@
+extensions [palette]
 __includes [ "a_star.nls" ]
 
 globals [
@@ -44,6 +45,7 @@ turtles-own [
 patches-own [
   is-taken? ;; is the ride already taken by a car?
   is-client? ;; is a start of ride
+  is-tapped? ;; a start of a ride that was touched by a driver that was assigned to this trip
   ride-created-tick ;; the tick at which the ride was created
   ride-expire-tick ;; the tick at which the ride will expire
   is-final? ;; is an end of ride?
@@ -118,6 +120,7 @@ to setup-patches
   ; Resetting to initial patch state
   ask patches [
     set is-client? false
+    set is-tapped? false
     set is-final? false
     set is-taken? false
     set my-ride-end nobody
@@ -201,7 +204,7 @@ to create-ride
       ]
 
       ask ride-end [
-        set pcolor red
+        ; set pcolor red ; commented since this was initially for debug and now causes a lot of confusion
         set is-final? true
       ]
     ]
@@ -216,6 +219,7 @@ end
 to close-ride [ride-start]
   ask ride-start [
     set is-client? false
+    set is-tapped? false
     set is-final? false
     set is-taken? false
 
@@ -313,14 +317,12 @@ to handle-ride-state ;; turtle procedure
       set current-path (a-star current-ride-start [my-ride-end] of current-ride-start)
       ; Store the path's length (to calculate profit when the ride is done)
       set current-ride-profit (calculate-profit (length current-path))
-      ; mark the patch as blue just to show it was reached
-      set pcolor blue
+      ; mark the patch as tapped just to know it was reached
+      set is-tapped? true
     ]
   ][
     if occupied? [
       if patch-here = [my-ride-end] of current-ride-start [
-        ; mark the patch as blue just to show it was reached
-        set pcolor blue
         ; increase company income based on ride profit
         without-interruption [
           set income (income + current-ride-profit)
@@ -388,6 +390,8 @@ to go
     set-driver-color
   ]
 
+  update-ride-patch-colors
+
   charge-expenses
 
   record-driver-data
@@ -405,7 +409,32 @@ to charge-expenses
   set expenses (expenses + (driver-salary * (count turtles)))
 end
 
-;;;;; Selecting epicentres
+;;;;; Ride color gradients
+to update-ride-patch-colors
+  ask patches with [is-client?] [
+    ; [0,1[
+    let progress-to-expire ((ticks - ride-created-tick) / (ride-expire-tick - ride-created-tick))
+    ; [0,0.7[
+    let normalized-progress (progress-to-expire * 0.7)
+
+    let red-netlogo extract-rgb red
+    let green-netlogo extract-rgb green
+    let white-netlogo extract-rgb white
+    let blue-netlogo extract-rgb blue
+
+    ifelse is-tapped? [
+      set pcolor palette:scale-gradient (list blue-netlogo white-netlogo) normalized-progress 0 1
+      ask my-ride-end [
+        set pcolor palette:scale-gradient (list red-netlogo white-netlogo) normalized-progress 0 1
+      ]
+    ][
+      set pcolor palette:scale-gradient (list green-netlogo white-netlogo) normalized-progress 0 1
+    ]
+  ]
+end
+
+;;;;; Epicentre methods
+
 to create-epicentres
   if mouse-down? [
     let x-mouse mouse-xcor
@@ -584,7 +613,7 @@ num-drivers
 num-drivers
 1
 20
-7.0
+1.0
 1
 1
 NIL
@@ -670,7 +699,7 @@ mean-arrival-rate
 mean-arrival-rate
 1
 20
-3.0
+7.0
 1
 1
 every 20 ticks
@@ -693,7 +722,7 @@ INPUTBOX
 1133
 359
 ride-ticks-to-expire
-250.0
+100.0
 1
 0
 Number
