@@ -516,42 +516,6 @@ NIL
 1
 
 PLOT
-224
-566
-424
-716
-Drivers Mid-Ride
-Time
-NDrivers
-0.0
-100.0
-0.0
-100.0
-true
-false
-"set-plot-y-range 0 num-drivers" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot num-drivers-occupied"
-
-PLOT
-19
-566
-219
-716
-Drivers Starting Ride
-Time
-NDrivers
-0.0
-100.0
-0.0
-100.0
-true
-false
-"set-plot-y-range 0 num-drivers" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot num-drivers-starting"
-
-PLOT
 433
 566
 633
@@ -607,42 +571,6 @@ PLOT
 566
 850
 716
-Income
-Time
-Profit
-0.0
-100.0
-0.0
-100.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot income"
-
-PLOT
-856
-566
-1056
-716
-Expenses
-Time
-Expenses
-0.0
-100.0
-0.0
-100.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot expenses"
-
-PLOT
-1063
-566
-1263
-716
 Net Profit
 Time
 Profit
@@ -692,24 +620,6 @@ ride-ticks-to-expire
 1
 0
 Number
-
-PLOT
-1274
-566
-1474
-716
-Clients that Gave Up
-Time
-NClientsGaveUp
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot num-clients-gave-up"
 
 BUTTON
 960
@@ -803,6 +713,61 @@ simulation-max-ticks
 1
 0
 Number
+
+MONITOR
+965
+484
+1025
+529
+Income
+income
+17
+1
+11
+
+MONITOR
+1032
+484
+1109
+529
+Expenses
+expenses
+2
+1
+11
+
+MONITOR
+1116
+484
+1264
+529
+Clients that Gave Up
+num-clients-gave-up
+0
+1
+11
+
+MONITOR
+21
+461
+170
+506
+Drivers Starting Ride
+num-drivers-starting
+0
+1
+11
+
+MONITOR
+22
+517
+162
+562
+Drivers Mid-Ride
+num-drivers-occupied
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
