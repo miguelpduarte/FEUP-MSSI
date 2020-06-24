@@ -45,7 +45,7 @@ turtles-own [
 patches-own [
   is-taken? ;; is the ride already taken by a car?
   is-client? ;; is a start of ride
-  is-tapped? ;; a start of a ride that was touched by a driver that was assigned to this trip
+  is-tapped? ;; a start of a ride that was touched by a driver that was assigned to this ride
   ride-created-tick ;; the tick at which the ride was created
   ride-expire-tick ;; the tick at which the ride will expire
   is-final? ;; is an end of ride?
@@ -319,6 +319,11 @@ to handle-ride-state ;; turtle procedure
       set current-ride-profit (calculate-profit (length current-path))
       ; mark the patch as tapped just to know it was reached
       set is-tapped? true
+      set pcolor blue
+      ; display ride end
+      ask my-ride-end [
+        set pcolor red
+      ]
     ]
   ][
     if occupied? [
@@ -377,7 +382,7 @@ to go
     create-ride
   ]
 
-  ask patches with [is-client? and ride-expire-tick != -1 and ticks >= ride-expire-tick] [
+  ask patches with [is-client? and not is-tapped? and ride-expire-tick != -1 and ticks >= ride-expire-tick] [
     cancel-ride
   ]
 
@@ -417,17 +422,10 @@ to update-ride-patch-colors
     ; [0,0.7[
     let normalized-progress (progress-to-expire * 0.7)
 
-    let red-netlogo extract-rgb red
     let green-netlogo extract-rgb green
     let white-netlogo extract-rgb white
-    let blue-netlogo extract-rgb blue
 
-    ifelse is-tapped? [
-      set pcolor palette:scale-gradient (list blue-netlogo white-netlogo) normalized-progress 0 1
-      ask my-ride-end [
-        set pcolor palette:scale-gradient (list red-netlogo white-netlogo) normalized-progress 0 1
-      ]
-    ][
+    if not is-tapped? [
       set pcolor palette:scale-gradient (list green-netlogo white-netlogo) normalized-progress 0 1
     ]
   ]
