@@ -455,10 +455,10 @@ to clear-epicentres
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-393
-10
-921
-539
+386
+18
+914
+547
 -1
 -1
 13.0
@@ -482,10 +482,10 @@ ticks
 30.0
 
 BUTTON
-21
-394
-162
-427
+53
+488
+215
+521
 Setup with Grid
 setup
 NIL
@@ -499,10 +499,10 @@ NIL
 1
 
 BUTTON
-195
-374
-258
-407
+224
+444
+305
+521
 Go
 go
 T
@@ -516,10 +516,10 @@ NIL
 1
 
 PLOT
-433
-566
-633
-716
+935
+19
+1135
+169
 Active Rides
 Time
 NTrips
@@ -537,7 +537,7 @@ PENS
 SLIDER
 18
 19
-212
+368
 52
 num-drivers
 num-drivers
@@ -550,10 +550,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-21
-351
-177
-384
+53
+445
+215
+478
 Setup with Image
 setup-with-image user-file
 NIL
@@ -567,10 +567,10 @@ NIL
 1
 
 PLOT
-650
-566
-850
-716
+1152
+19
+1352
+169
 Net Profit
 Time
 Profit
@@ -585,10 +585,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot (income - expenses)"
 
 SLIDER
-956
-40
-1244
-73
+17
+276
+374
+309
 mean-arrival-rate
 mean-arrival-rate
 1
@@ -599,22 +599,11 @@ mean-arrival-rate
 every 20 ticks
 HORIZONTAL
 
-MONITOR
-958
-86
-1083
-131
-Next Arrival Time
-next-arrival-time
-17
-1
-11
-
 INPUTBOX
-961
-299
-1133
-359
+199
+67
+371
+127
 ride-ticks-to-expire
 50.0
 1
@@ -622,10 +611,10 @@ ride-ticks-to-expire
 Number
 
 BUTTON
-960
-199
-1122
-232
+17
+363
+192
+396
 Create Epicentres
 create-epicentres
 T
@@ -639,10 +628,10 @@ NIL
 0
 
 BUTTON
-961
-240
-1111
-273
+200
+363
+375
+396
 Clear Epicentres
 clear-epicentres
 NIL
@@ -656,10 +645,10 @@ NIL
 1
 
 SLIDER
-960
-159
-1229
-192
+17
+321
+374
+354
 spawn-in-epicentre-chance
 spawn-in-epicentre-chance
 0
@@ -704,10 +693,10 @@ salary-per-driver-per-tick
 Number
 
 INPUTBOX
-963
-402
-1124
-462
+199
+136
+373
+196
 simulation-max-ticks
 0.0
 1
@@ -715,10 +704,10 @@ simulation-max-ticks
 Number
 
 MONITOR
-965
-484
-1025
-529
+1152
+182
+1353
+227
 Income
 income
 17
@@ -726,10 +715,10 @@ income
 11
 
 MONITOR
-1032
-484
-1109
-529
+1153
+238
+1354
+283
 Expenses
 expenses
 2
@@ -737,10 +726,10 @@ expenses
 11
 
 MONITOR
-1116
-484
-1264
-529
+936
+294
+1137
+339
 Clients that Gave Up
 num-clients-gave-up
 0
@@ -748,10 +737,10 @@ num-clients-gave-up
 11
 
 MONITOR
-21
-461
-170
-506
+935
+182
+1135
+227
 Drivers Starting Ride
 num-drivers-starting
 0
@@ -759,10 +748,10 @@ num-drivers-starting
 11
 
 MONITOR
-22
-517
-162
-562
+936
+238
+1136
+283
 Drivers Mid-Ride
 num-drivers-occupied
 17
