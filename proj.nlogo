@@ -119,6 +119,8 @@ to setup-patches
     set my-ride-end nobody
     set ride-created-tick -1
     set ride-expire-tick -1
+    set plabel ""
+    set plabel-color black
   ]
 
   ; The roads agentset is the patches that are white
@@ -136,7 +138,6 @@ to setup-drivers
     set-driver-color
   ]
 end
-
 
 ;;;;; queue and scheduling procedures
 to schedule-arrival
@@ -174,6 +175,15 @@ to create-ride
   without-interruption [
     let non-rides roads with [not is-client? and not is-final?]
     let ride-start one-of non-rides
+
+    if (random 100 < spawn-in-epicentre-chance) [
+      ; spawn near an epicentre
+      let selected-epicentre one-of patches with [plabel = "E"]
+      if is-patch? selected-epicentre [
+        set ride-start min-one-of non-rides [distance selected-epicentre]
+      ]
+    ]
+
     let ride-end one-of non-rides with [self != ride-start and (distance ride-start) > min-ride-distance]
 
     if (is-patch? ride-start and is-patch? ride-end) [
@@ -385,6 +395,30 @@ end
 
 to charge-expenses
   set expenses (expenses + (driver-salary * (count turtles)))
+end
+
+;;;;; Selecting epicentres
+to create-epicentres
+  if mouse-down? [
+    let x-mouse mouse-xcor
+    let y-mouse mouse-ycor
+
+    let selected-patch (patch x-mouse y-mouse)
+
+    if (is-patch? selected-patch and (member? selected-patch roads)) [
+      show "yes"
+      show selected-patch
+      set-epicentre selected-patch
+    ]
+  ]
+end
+
+to set-epicentre [selected-patch]
+  ask selected-patch [set plabel "E"]
+end
+
+to clear-epicentres
+  ask patches [ set plabel "" ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -673,6 +707,55 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot num-clients-gave-up"
+
+BUTTON
+965
+280
+1127
+313
+Create Epicentres
+create-epicentres
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+0
+
+BUTTON
+966
+321
+1116
+354
+Clear Epicentres
+clear-epicentres
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+965
+240
+1234
+273
+spawn-in-epicentre-chance
+spawn-in-epicentre-chance
+0
+100
+45.0
+1
+1
+%
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
