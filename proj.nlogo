@@ -14,7 +14,7 @@ globals [
   num-rides-taken
   num-clients-gave-up
 
-  ; money constants
+  ; money constants (now being set by their inputs' values in "setup-globals")
   B ; ride base price
   P ; price charged per distance unit of ride
   driver-salary
@@ -100,9 +100,13 @@ to setup-globals
   set num-rides-taken 0
   set num-clients-gave-up 0
 
-  set B 3
-  set P 5
-  set driver-salary 0.05
+  ; set B 3
+  set B ride-base-price
+  ; set P 5
+  set P price-per-ride-distance-unit
+  ; set driver-salary 0.05
+  set driver-salary salary-per-driver-per-tick
+
   set income 0
   set expenses 0
 
@@ -479,10 +483,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-30
-371
-171
-404
+26
+469
+167
+502
 Setup with Grid
 setup
 NIL
@@ -496,10 +500,10 @@ NIL
 1
 
 BUTTON
-217
-352
-280
-385
+213
+450
+276
+483
 Go
 go
 T
@@ -583,10 +587,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-29
-321
-185
-354
+25
+419
+181
+452
 Setup with Image
 setup-with-image user-file
 NIL
@@ -680,10 +684,10 @@ next-arrival-time
 11
 
 INPUTBOX
-16
-157
-188
-217
+961
+299
+1133
+359
 ride-ticks-to-expire
 250.0
 1
@@ -709,10 +713,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot num-clients-gave-up"
 
 BUTTON
-965
-280
-1127
-313
+960
+199
+1122
+232
 Create Epicentres
 create-epicentres
 T
@@ -726,10 +730,10 @@ NIL
 0
 
 BUTTON
-966
-321
-1116
-354
+961
+240
+1111
+273
 Clear Epicentres
 clear-epicentres
 NIL
@@ -743,10 +747,10 @@ NIL
 1
 
 SLIDER
-965
-240
-1234
-273
+960
+159
+1229
+192
 spawn-in-epicentre-chance
 spawn-in-epicentre-chance
 0
@@ -756,6 +760,39 @@ spawn-in-epicentre-chance
 1
 %
 HORIZONTAL
+
+INPUTBOX
+19
+151
+180
+211
+ride-base-price
+3.0
+1
+0
+Number
+
+INPUTBOX
+19
+219
+180
+279
+price-per-ride-distance-unit
+5.0
+1
+0
+Number
+
+INPUTBOX
+19
+288
+180
+348
+salary-per-driver-per-tick
+0.05
+1
+0
+Number
 
 @#$#@#$#@
 ## WHAT IS IT?
