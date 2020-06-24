@@ -367,6 +367,10 @@ end
 ;; Runtime
 ;;;;;;;;;;;;;;;;;;;;
 to go
+  if (simulation-max-ticks > 0 and ticks >= simulation-max-ticks) [
+    stop
+  ]
+
   if (next-arrival-time = ticks) [
     create-ride
   ]
@@ -790,6 +794,17 @@ INPUTBOX
 348
 salary-per-driver-per-tick
 0.05
+1
+0
+Number
+
+INPUTBOX
+963
+402
+1124
+462
+simulation-max-ticks
+0.0
 1
 0
 Number
